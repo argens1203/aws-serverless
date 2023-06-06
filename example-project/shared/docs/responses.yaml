@@ -1,0 +1,56 @@
+Unauthorized:
+  description: Unauthorized
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: false
+          detail:
+            type: object
+          message:
+            type: object
+            properties:
+              en:
+                type: string
+                example: Unauthorized
+              zh-hk:
+                type: string
+                example: Unauthorized
+Unsuccessful:
+  description: Unsuccessful
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: false
+          detail:
+            type: object
+          message:
+            type: object
+            properties:
+              en:
+                type: string
+              zh-hk:
+                type: string
+SuccessfulFragment:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+UnsuccessfulFragment:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: false
+    message:
+      type: string

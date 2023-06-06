@@ -1,0 +1,34 @@
+Resources:
+  BadRequestBodyResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseType: BAD_REQUEST_BODY
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+      ResponseTemplates:
+        application/json: '{"success":false,"message":{"en": "Bad Request"},"detail": {"request":"$context.requestId","detail":"$context.error.validationErrorString"}}'
+      RestApiId: !Ref ApiGatewayRestApi
+      StatusCode: 400
+  BadRequestParamResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseType: BAD_REQUEST_PARAMETERS
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+      ResponseTemplates:
+        application/json: '{"success":false,"message":{"en": "Bad Request"},"detail": {"request":"$context.requestId","detail":"$context.error.validationErrorString is missing"}}'
+      RestApiId: !Ref ApiGatewayRestApi
+      StatusCode: 400
+  AuthorizerFailureResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseType: ACCESS_DENIED
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+      ResponseTemplates:
+        application/json: '{"success":false,"message":{"en": "Unauthorized"},"detail": {"request":"$context.requestId","stack":$context.authorizer.error}}'
+      RestApiId: !Ref ApiGatewayRestApi
+      StatusCode: 401

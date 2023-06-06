@@ -1,0 +1,110 @@
+# NOTE: update this with your service name
+app: swap
+service: link
+
+# Create an optimized package for our functions 
+package:
+  individually: true
+
+plugins:
+  - serverless-bundle # Package our functions with Webpack
+  - serverless-offline
+  - serverless-dotenv-plugin # Load .env as environment variables
+
+provider:
+  lambdaHashingVersion: 20201221
+  apiGateway:
+    shouldStartNameWithService: true
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: ap-east-1
+  environment:
+    LINK_TABLE_NAME: !Ref LinkTable
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+      Resource:
+        - !GetAtt LinkTable.Arn
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+      Resource:
+        - !Join [ "/", [ !GetAtt LinkTable.Arn, index/* ] ]
+
+functions:
+  from:
+    handler: handlers/forward/index.handler
+    events:
+      - http:
+          path: /links/from/{from}
+          method: GET
+  to:
+    handler: handlers/back/index.handler
+    events:
+      - http:
+          path: /links/to/{to}
+          method: GET
+  link:
+    handler: handlers/link/index.handler
+    events:
+      - http:
+          path: /links/{id}
+          method: GET
+      - http:
+          path: /links/{id}
+          method: PATCH
+      - http:
+          path: /links/{id}
+          method: DELETE
+          cors: true
+      - http:
+          path: /links/from/{from}/to/{to}
+          method: POST
+          cors: true
+  clearAll:
+    handler: handlers/debug/clear-all.handler
+
+resources:
+  - Resources:
+      LinkTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+          KeySchema:
+            - AttributeName: __id
+              KeyType: HASH
+          AttributeDefinitions:
+            - AttributeName: __id
+              AttributeType: S
+            - AttributeName: from
+              AttributeType: S
+            - AttributeName: to
+              AttributeType: S
+            - AttributeName: _rank
+              AttributeType: N
+          BillingMode: PAY_PER_REQUEST
+          GlobalSecondaryIndexes:
+            - IndexName: fromRankIndex
+              KeySchema:
+                - AttributeName: from
+                  KeyType: HASH
+                - AttributeName: _rank
+                  KeyType: RANGE
+              Projection:
+                ProjectionType: ALL
+            - IndexName: toRankIndex
+              KeySchema:
+                - AttributeName: to
+                  KeyType: HASH
+                - AttributeName: _rank
+                  KeyType: RANGE
+              Projection:
+                ProjectionType: ALL
+
+custom:
+  bundle:
+    caching: false
+    sourcemaps: false

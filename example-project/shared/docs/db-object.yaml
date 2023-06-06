@@ -1,0 +1,7 @@
+InDB:
+  type: object
+  properties:
+    createdAt:
+      $ref: "./data-type.yaml#/Epoch"
+    isEnabled:
+      type: boolean

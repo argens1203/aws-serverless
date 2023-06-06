@@ -1,0 +1,139 @@
+# NOTE: update this with your service name
+app: swap
+service: node
+
+# Create an optimized package for our functions
+package:
+  individually: true
+
+plugins:
+  - serverless-bundle # Package our functions with Webpack
+  - serverless-offline
+  - serverless-dotenv-plugin # Load .env as environment variables
+
+provider:
+  lambdaHashingVersion: 20201221
+  apiGateway:
+    shouldStartNameWithService: true
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: ap-east-1
+  environment:
+    NODE_TABLE_NAME: !Ref NodeTable
+    LINK_TABLE_NAME: link-dev-LinkTable-KMAE85MC22LO
+  iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Scan
+        Resource:
+          - !GetAtt NodeTable.Arn
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource:
+          - !Join [ "/", [ !GetAtt NodeTable.Arn, index/* ] ]
+  # To load environment variables externally
+  # rename env.example to .env and uncomment
+  # the following line. Also, make sure to not
+  # commit your .env.
+  #
+  #environment:
+  #  SAMPLE_ENV_VAR: ${env:SAMPLE_ENV_VAR}
+
+functions:
+  node:
+    handler: handlers/node/index.handler
+    events:
+      - http:
+          path: /nodes/
+          method: post
+          cors: true
+      - http:
+          path: /nodes/{id}
+          method: get
+      - http:
+          path: /nodes/{id}
+          method: patch
+          cors: true
+      - http:
+          path: /nodes/{id}
+          method: delete
+          cors: true
+  all:
+    handler: handlers/all/index.handler
+    events:
+      - http:
+          path: /nodes/all
+          method: get
+  title:
+    handler: handlers/title/index.handler
+    events:
+      - http:
+          path: /nodes/title/{title}
+          method: get
+  clearAll:
+    handler: handlers/debug/clear-all.handler
+
+  getSpecial:
+    handler: handlers/debug/get-special.handler
+    events:
+      - http:
+          path: /get-special
+          method: GET
+
+  injectData:
+    handler: handlers/debug/inject-data.handler
+
+resources:
+  - Resources:
+      NodeTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+          KeySchema:
+            - AttributeName: __id
+              KeyType: HASH
+          AttributeDefinitions:
+            - AttributeName: __id
+              AttributeType: S
+            - AttributeName: title
+              AttributeType: S
+            - AttributeName: __created_at
+              AttributeType: S
+            - AttributeName: _importance
+              AttributeType: N
+            - AttributeName: _dummy
+              AttributeType: S
+          BillingMode: PAY_PER_REQUEST
+          GlobalSecondaryIndexes:
+            - IndexName: titleCreatedAtIndex
+              KeySchema:
+                - AttributeName: title
+                  KeyType: HASH
+                - AttributeName: __created_at
+                  KeyType: RANGE
+              Projection:
+                ProjectionType: ALL
+            - IndexName: dummyImportanceIndex
+              KeySchema:
+                - AttributeName: _dummy
+                  KeyType: HASH
+                - AttributeName: _importance
+                  KeyType: RANGE
+              Projection:
+                ProjectionType: ALL
+            - IndexName: dummyCreatedAtIndex
+              KeySchema:
+                - AttributeName: _dummy
+                  KeyType: HASH
+                - AttributeName: __created_at
+                  KeyType: RANGE
+              Projection:
+                ProjectionType: ALL
+custom:
+  bundle:
+    caching: false
+    sourcemaps: false

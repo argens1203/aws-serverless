@@ -1,0 +1,4 @@
+export const SMSMessageType = {
+  TRANSACTIONAL: "TRANSACTIONAL",
+  PROMOTIONAL: "PROMOTIONAL"
+};
